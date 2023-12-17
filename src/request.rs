@@ -4,10 +4,30 @@ pub struct Request {
     pub path: String,
     pub version: String,
     pub headers: Vec<String>,
-    pub body: String
+    pub body: String,
 }
 
 impl Request {
+    /// parse request
+    /// # Examples
+    /// ```
+    /// let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+    /// 
+    /// loop {
+    ///     let (mut stream, _) = listener.accept().await.unwrap();
+    ///     println!("Connection from: {}", stream.peer_addr().unwrap());
+    ///
+    ///    tokio::spawn(async move {
+    ///         // read request
+    ///         let stream = &mut stream;
+    ///
+    ///         let mut buffer = [0; 1024];
+    ///         stream.read(&mut buffer).await.unwrap();
+    ///
+    ///         let request = Request::new(String::from_utf8_lossy(&buffer).to_string());
+    ///    });
+    /// }
+    /// ```
     pub fn new(request: String) -> Request {
         let split = request.split(" ").collect::<Vec<&str>>();
 
@@ -15,7 +35,8 @@ impl Request {
         let path = split[1];
         let version = split[2].split("\r\n").collect::<Vec<&str>>()[0];
 
-        let headers: Vec<String> = request.lines()
+        let headers: Vec<String> = request
+            .lines()
             .filter(|x| x.contains(":"))
             .map(|x| x.to_string())
             .collect();

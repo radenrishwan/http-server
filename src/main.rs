@@ -23,7 +23,7 @@ async fn main() {
             let mut buffer = [0; 1024];
             stream.read(&mut buffer).await.unwrap();
 
-            let req = Request::new(String::from_utf8_lossy(&buffer).to_string());
+            let _ = Request::new(String::from_utf8_lossy(&buffer).to_string());
 
            // write a response
            let response = Response::new(
