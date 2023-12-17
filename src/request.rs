@@ -21,7 +21,6 @@ impl Request {
             .collect();
 
         let body = request.split("\r\n\r\n").collect::<Vec<&str>>()[1];
-        println!("body: {}", body);
 
         Request {
             method: method.to_string(),

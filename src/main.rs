@@ -2,7 +2,7 @@ mod request;
 mod response;
 
 use tokio::{
-    net::TcpListener, io::{AsyncWriteExt, AsyncReadExt},
+    net::TcpListener, io::AsyncReadExt,
 };
 
 use crate::request::Request;
@@ -23,11 +23,17 @@ async fn main() {
             let mut buffer = [0; 1024];
             stream.read(&mut buffer).await.unwrap();
 
-            println!("Request: {}", String::from_utf8_lossy(&buffer));
-
             let req = Request::new(String::from_utf8_lossy(&buffer).to_string());
 
            // write a response
+           let response = Response::new(
+               "200 OK".to_string(),
+               vec![],
+               "<h1>Hello, World</h1>".to_string()
+           );
+
+           // send response
+           response.send(stream).await.unwrap() ;
 
        });
     }

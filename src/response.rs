@@ -36,13 +36,9 @@ impl Response {
         }
     }
 
-    pub async fn send(&self, stream: &mut TcpStream) {
+    pub async fn send(&self, stream: &mut TcpStream) -> Result<(), std::io::Error> {
         let response = format!("HTTP/1.1 {}\r\n{}\r\n\r\n{}", self.status, self.headers.join("\r\n"), self.body);
 
-        stream.write_all(response.as_bytes()).await.unwrap();
+        stream.write_all(response.as_bytes()).await
     }
-}
-
-pub fn write_headers(headers: Vec<String>) -> String {
-    headers.join("\r\n")
 }
