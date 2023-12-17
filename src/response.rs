@@ -37,6 +37,8 @@ impl Response {
         }
     }
 
+    /// Send the response to the stream.
+    /// currently only supports http/1.1
     pub async fn send(&self, stream: &mut TcpStream) -> Result<(), std::io::Error> {
         let response = format!("HTTP/1.1 {}\r\n{}\r\n\r\n{}", self.status, self.headers.join("\r\n"), self.body);
 
