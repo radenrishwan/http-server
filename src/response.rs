@@ -1,5 +1,6 @@
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
+#[derive(Debug, Clone)]
 pub struct Response {
     status: String,
     headers: Vec<String>,

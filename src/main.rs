@@ -1,10 +1,10 @@
+mod handler;
 mod request;
 mod response;
 
-use tokio::{
-    net::TcpListener, io::AsyncReadExt,
-};
+use tokio::{io::AsyncReadExt, net::TcpListener};
 
+use crate::handler::file_handler;
 use crate::request::Request;
 use crate::response::Response;
 
@@ -16,25 +16,40 @@ async fn main() {
         let (mut stream, _) = listener.accept().await.unwrap();
         println!("Connection from: {}", stream.peer_addr().unwrap());
 
-       tokio::spawn(async move {
-            // read request
+        tokio::spawn(async move {
+            // get stream
             let stream = &mut stream;
 
             let mut buffer = [0; 1024];
             stream.read(&mut buffer).await.unwrap();
 
-            let req = Request::new(String::from_utf8_lossy(&buffer).to_string());
+            let request = Request::new(String::from_utf8_lossy(&buffer).to_string());
 
-           // write a response
-           let response = Response::new(
-               "200 OK".to_string(),
-               vec![],
-               "<h1>Hello, World</h1>".to_string()
-           );
+            if request.path == "/" {
+                let response = Response::new(
+                    "200 OK".to_string(),
+                    vec![],
+                    "<h1>Index</h1>".to_string(),
+                );
 
-           // send response
-           response.send(stream).await.unwrap() ;
+                // send response
+                response.send(stream).await.unwrap();
+            }
 
-       });
+            if request.path == "/hello" {
+                let response = Response::new(
+                    "200 OK".to_string(),
+                    vec![],
+                    "<h1>Hello, World!</h1>".to_string(),
+                );
+
+                // send response
+                response.send(stream).await.unwrap();
+            }
+
+            if request.path == "/serve" {
+                file_handler(stream, "static/somefile.html").await.unwrap();
+            }
+        });
     }
 }
