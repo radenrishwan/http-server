@@ -48,7 +48,8 @@ async fn main() {
             }
 
             if request.path == "/serve" {
-                file_handler(stream, "static/somefile.html").await.unwrap();
+                file_handler(stream, "static/somefile.html", "text/html").await.unwrap();
+                
             }
         });
     }
