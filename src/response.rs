@@ -13,7 +13,7 @@ impl Response {
     /// to the header
     pub fn new(status: String, headers: Vec<String>, body: String) -> Response {
         let mut headers = headers;
-        headers.push(format!("Content-Length: {}", body.len()));
+        headers.push(format!("Content-Length: {}; charset=utf-8", body.len()));
 
         // check if the content type is already set
         if !headers.contains(&format!("Content-Type: {}", "text/html")) {
@@ -23,11 +23,6 @@ impl Response {
         // check if status code is already set
         if !headers.contains(&format!("Status: {}", status)) {
             headers.push(format!("Status: {}", status));
-        }
-
-        // check if charset is already set
-        if !headers.contains(&format!("charset: {}", "utf-8")) {
-            headers.push(format!("charset: {}", "utf-8"));
         }
         
         Response {

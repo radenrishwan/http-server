@@ -1,6 +1,7 @@
 mod handler;
 mod request;
 mod response;
+mod utils;
 
 use tokio::{io::AsyncReadExt, net::TcpListener};
 

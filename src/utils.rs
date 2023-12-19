@@ -8,7 +8,7 @@ pub mod cookie {
    }
 
     pub fn get(response: Response, key: &str) -> Result<&str, Error> {
-        return match response.headers.get("Cookie") {
+        return match response.headers.get("Cookie") || response.headers.get("cookie") {
             Ok(cookies) => {
                 let cookies = cookies.split(";").collect::<Vec<&str>>();
                 for cookie in cookies {
