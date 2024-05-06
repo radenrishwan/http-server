@@ -3,8 +3,7 @@ mod request;
 mod response;
 mod utils;
 
-use chrono::{Utc, Duration};
-use tokio::io::AsyncWriteExt;
+use chrono::{Duration, Utc};
 use tokio::{io::AsyncReadExt, net::TcpListener};
 
 use crate::handler::file_handler;
@@ -28,13 +27,26 @@ async fn main() {
             stream.read(&mut buffer).await.unwrap();
 
             let request = Request::new(String::from_utf8_lossy(&buffer).to_string());
+            for (key, value) in request.headers.iter() {
+                println!("{}: {}", key, value);
+            }
+
+            println!("==============================");
+
+            // check if it's a websocket request
+            if request.headers.contains_key("Upgrade") {
+                if request.headers.get("Upgrade").unwrap() == "websocket" {
+                    // get ws key from request
+                    let key = request.headers.get("Sec-WebSocket-Key").unwrap();
+
+                    println!("upgrading to websocket...");
+                    utils::websocket::upgrade(stream, key).await.unwrap();
+                }
+            }
 
             if request.path == "/" {
-                let response = Response::new(
-                    "200 OK".to_string(),
-                    vec![],
-                    "<h1>Index</h1>".to_string(),
-                );
+                let response =
+                    Response::new("200 OK".to_string(), vec![], "<h1>Index</h1>".to_string());
 
                 // send response
                 response.send(stream).await.unwrap();
@@ -55,30 +67,24 @@ async fn main() {
                 let current = Utc::now() + Duration::days(7);
                 let c = cookie::set("foo", "bar", "/cookie", ".localhost", current);
 
-               let cookies = cookie::get(request.headers); 
+                let cookies = cookie::get(&request.headers);
+
                 let mut body = "".to_string();
 
                 for (key, value) in cookies {
                     body.push_str(format!("<h3>{}: {}<h3>", key, value).as_str());
                 }
 
-                let response = Response::new(
-                    "200 OK".to_string(),
-                    vec![
-                        c
-                    ],
-                    body,
-                );                
+                let response = Response::new("200 OK".to_string(), vec![c], body);
 
                 response.send(stream).await.unwrap();
             }
 
             if request.path == "/serve" {
-                file_handler(stream, "static/somefile.html", "text/html").await.unwrap();
+                file_handler(stream, "static/somefile.html", "text/html")
+                    .await
+                    .unwrap();
             }
-
-            stream.shutdown().await.unwrap();
-            println!("Connection closed");
         });
     }
 }

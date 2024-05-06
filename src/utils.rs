@@ -38,27 +38,27 @@ pub mod cookie {
         )
     }
 
-    pub fn get(headers: Vec<String>) -> HashMap<String, String> {
+    pub fn get(headers: &HashMap<String, String>) -> HashMap<String, String> {
         let mut result = HashMap::new();
         // split cookies
+        let headers = headers
+            .get("Cookie")
+            .unwrap()
+            .split(";")
+            .collect::<Vec<&str>>();
+
         for header in headers {
-            if header.contains("Cookie:") {
-                let cookie = header.split("Cookie:").collect::<Vec<&str>>()[1];
-                let cookie = cookie.split(";").collect::<Vec<&str>>();
-
-                for c in cookie {
-                    let cookie = c.split("=").collect::<Vec<&str>>();
-                    result.insert(cookie[0].to_string(), cookie[1].to_string());
-                }
-
-                break;
-            }
+            let header = header.split("=").collect::<Vec<&str>>();
+            result.insert(
+                header[0].to_string().trim_start().to_string(),
+                header[1].to_string().to_string(),
+            );
         }
 
         result
     }
 
-    pub fn get_value(headers: Vec<String>, key: &str) -> Result<String, Error> {
+    pub fn get_value(headers: &HashMap<String, String>, key: &str) -> Result<String, Error> {
         // get cookie
         let cookies = get(headers);
 
@@ -67,5 +67,66 @@ pub mod cookie {
         }
 
         Err(Error::new(ErrorKind::NotFound, "Cookie not found"))
+    }
+}
+
+// GET /chat HTTP/1.1
+// Host: server.example.com
+// Upgrade: websocket
+// Connection: Upgrade
+// Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+// Origin: http://example.com
+// Sec-WebSocket-Protocol: chat, superchat
+// Sec-WebSocket-Version: 13
+
+// HTTP/1.1 101 Switching Protocols
+// Upgrade: websocket
+// Connection: Upgrade
+// Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+// Sec-WebSocket-Protocol: chat
+
+pub mod websocket {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use sha1::{Digest, Sha1};
+    use tokio::{io::AsyncWriteExt, net::TcpStream};
+    static WS_KEY: &str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+    pub async fn upgrade(socket: &mut TcpStream, id: &str) -> Result<(), std::io::Error> {
+        let key = generate_key(id.to_string());
+
+        let headers = format!("
+            HTTP/1.1 101 Switching Protocols\r\n
+            Upgrade: websocket\r\n
+            Connection: Upgrade\r\n
+            Sec-WebSocket-Accept: {}\r\n
+            Sec-WebSocket-Protocol: chat\r\n",
+            key
+        );
+
+        let headers = headers.replace(" ", "");
+    
+        print!("headers: {}", headers);
+
+        match socket.write_all(headers.as_bytes()).await {
+            Ok(_) => {
+                println!("websocket upgraded");
+            }
+            Err(_) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "websocket upgrade failed",
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn generate_key(id: String) -> String {
+        let mut hash = Sha1::new();
+        hash.update(id.as_bytes());
+        hash.update(WS_KEY.as_bytes());
+
+        STANDARD.encode(&hash.finalize())
     }
 }

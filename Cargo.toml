@@ -9,4 +9,6 @@ edition = "2021"
 tokio = { version = "1.35.0", features = ["full"] }
 rand = "0.8.5"
 chrono = "0.4.38"
+sha1 = "0.10.6"
+base64 = "0.22.1"
 
